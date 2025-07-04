@@ -86,12 +86,13 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(c -> c.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+				.cors().configurationSource(corsConfigurationSource()).and()
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/actuator/**", "/public/**", "/auth/login", "/teacher/**", "/swagger-ui/**",
 								"/v3/**")
 						.permitAll().requestMatchers("/admin/**").hasRole("admin").requestMatchers("/teacher/**")
-						.hasAnyRole("teacher", "admin").requestMatchers("/student/**")
-						.hasAnyRole("student", "teacher", "admin").requestMatchers("/user/**")
+						.hasAnyRole("teacher", "admin").requestMatchers("/student/**", "/grades/**")
+						.hasAnyRole("student", "teacher", "admin").requestMatchers("/user/**", "grades/{id}/student")
 						.hasAnyRole("admin", "teacher", "student", "master", "HOS-1", "HOS-2").anyRequest()
 						.authenticated())
 				.oauth2Login(auth -> auth.successHandler(authenticationSuccessHandler())
@@ -123,7 +124,6 @@ public class SecurityConfig {
 			// Redirect back to frontend (custom domain if needed)
 			Cookie cookie = new Cookie("USER", encodedRoles);
 			String serverName = request.getServerName(); // e.g., "localhost" or "frontend.example.com"
-			System.out.println(serverName);
 			cookie.setDomain(serverName);
 			cookie.setHttpOnly(true);
 			cookie.setPath("/");

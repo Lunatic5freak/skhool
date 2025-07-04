@@ -56,7 +56,7 @@ public class AttendanceUtils {
 			int mask = 0b111 << shift;
 
 			int current = (bitmap[byteIndex] & mask) >> shift;
-			if (current == 0) {
+			if (current != code) {
 				bitmap[byteIndex] &= ~mask;
 				bitmap[byteIndex] |= (code << shift);
 			}
@@ -74,7 +74,7 @@ public class AttendanceUtils {
 			int secondPart = (bitmap[byteIndex + 1] >> (8 - secondPartBits)) & ((1 << secondPartBits) - 1);
 			int current = (firstPart << secondPartBits) | secondPart;
 
-			if (current == 0) {
+			if (current != code) {
 				// Clear existing
 				bitmap[byteIndex] &= ~((1 << firstPartBits) - 1);
 				bitmap[byteIndex + 1] &= ~(((1 << secondPartBits) - 1) << (8 - secondPartBits));
@@ -159,4 +159,22 @@ public class AttendanceUtils {
 
 		return result;
 	}
+
+	public static Byte get3BitCode(byte[] bitmap, LocalDate startDate, LocalDate date) {
+		int dayIndex = (int) ChronoUnit.DAYS.between(startDate, date);
+		int bitOffset = dayIndex * 3;
+		int byteIndex = bitOffset / 8;
+		int bitIndexInByte = bitOffset % 8;
+
+		if (byteIndex >= bitmap.length)
+			return null;
+
+		int shift = 8 - 3 - bitIndexInByte;
+		if (shift < 0 || shift > 5)
+			return null; // unsafe shift
+
+		int mask = 0b111 << shift;
+		return (byte) ((bitmap[byteIndex] & mask) >> shift);
+	}
+
 }

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ba.skhool.student.entity.Student;
@@ -24,5 +25,9 @@ public interface StudentRepository extends JpaRepository<Student, Long>, JpaSpec
 
 	@Query("Select s.id as studentId, s.firstname as firstname, s.lastname as lastname, s.rollNo as rollNo, sb as attendance from Student s left join StudentAttendanceBitmap sb on s.id=sb.studentId.id where className= :className and section= :section")
 	List<Map<String, Object>> getAttendanceByClassnameAndSection(String className, String section);
+
+	@Query("SELECT s FROM Student s LEFT JOIN FETCH s.attendance WHERE s.className IN :classes AND s.section IN :sections")
+	List<Student> getByClassNameAndSection(@Param("classes") List<String> classes,
+			@Param("sections") List<String> sections);
 
 }

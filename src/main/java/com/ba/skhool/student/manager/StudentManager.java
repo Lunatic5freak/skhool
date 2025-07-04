@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -16,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
@@ -283,12 +283,7 @@ public class StudentManager {
 			bitmapEntity.setAttendanceBitmap(new byte[1]);
 			bitmapEntity.setCreatedBy(UserSessionContextHolder.getUsername());
 			DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-			try {
-				bitmapEntity.setStartDate(df.parse("2025-06-15"));
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			bitmapEntity.setStartDate(new Date());
 			Student s = studentRepository.findById(studentId).get();
 			bitmapEntity.setStudentId(s);
 		}
@@ -351,6 +346,16 @@ public class StudentManager {
 		attendances.forEach(at -> {
 			saveAttendanceForStudent(at.getStudentId(), date, at.getStatus(), null);
 		});
+	}
+
+	public Map<String, List<Student>> getByClassNameAndSection(List<String> classes, List<String> sections) {
+		return studentRepository.getByClassNameAndSection(classes, sections).stream()
+				.collect(Collectors.groupingBy(s -> s.getClassName() + "-" + s.getSection()));
+	}
+
+	public Map<Long, Student> findByIds(List<Long> ids) {
+		return studentRepository.findAllById(ids).stream()
+				.collect(Collectors.toMap(Student::getId, Function.identity()));
 	}
 
 }

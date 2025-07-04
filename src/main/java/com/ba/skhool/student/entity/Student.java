@@ -2,6 +2,8 @@ package com.ba.skhool.student.entity;
 
 import java.time.OffsetDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -260,6 +262,11 @@ public class Student {
 
 	public void setAttendance(StudentAttendanceBitmap attendance) {
 		this.attendance = attendance;
+	}
+
+	@JsonIgnore
+	public String getName() {
+		return this.firstname.concat(" ").concat(this.lastname);
 	}
 
 }

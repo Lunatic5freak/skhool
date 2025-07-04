@@ -1,6 +1,7 @@
 package com.ba.skhool.student.entity;
 
 import java.time.OffsetDateTime;
+import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,8 +10,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author Biswabijayee Mohanty
@@ -18,6 +23,8 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "teachers")
+@Data
+@NoArgsConstructor
 public class Teacher {
 
 	@Id
@@ -47,6 +54,10 @@ public class Teacher {
 	private String personalEmail;
 	private String gender;
 
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "teacher_classroom", joinColumns = @JoinColumn(name = "teacher_id"), inverseJoinColumns = @JoinColumn(name = "classroom_id"))
+	private Set<ClassRoom> assignedClasses;
+
 	@Column(name = "created_date", nullable = false)
 	private OffsetDateTime createdDate = OffsetDateTime.now();
 
@@ -58,149 +69,5 @@ public class Teacher {
 
 	@Column(name = "is_deleted")
 	private Boolean isDeleted = false;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getFirstname() {
-		return firstname;
-	}
-
-	public void setFirstname(String firstname) {
-		this.firstname = firstname;
-	}
-
-	public String getLastname() {
-		return lastname;
-	}
-
-	public void setLastname(String lastname) {
-		this.lastname = lastname;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public Long getOrganization() {
-		return organization;
-	}
-
-	public void setOrganization(Long organization) {
-		this.organization = organization;
-	}
-
-	public String getCategory() {
-		return category;
-	}
-
-	public void setCategory(String category) {
-		this.category = category;
-	}
-
-	public String getQualification() {
-		return qualification;
-	}
-
-	public void setQualification(String qualification) {
-		this.qualification = qualification;
-	}
-
-	public String getBio() {
-		return bio;
-	}
-
-	public void setBio(String bio) {
-		this.bio = bio;
-	}
-
-	public String getProfilePic() {
-		return profilePic;
-	}
-
-	public void setProfilePic(String profilePic) {
-		this.profilePic = profilePic;
-	}
-
-	public String getContact() {
-		return contact;
-	}
-
-	public void setContact(String contact) {
-		this.contact = contact;
-	}
-
-	public String getOrganizationEmail() {
-		return organizationEmail;
-	}
-
-	public void setOrganizationEmail(String organizationEmail) {
-		this.organizationEmail = organizationEmail;
-	}
-
-	public TeachersAttendanceBitMap getAttendance() {
-		return attendance;
-	}
-
-	public void setAttendance(TeachersAttendanceBitMap attendance) {
-		this.attendance = attendance;
-	}
-
-	public String getPersonalEmail() {
-		return personalEmail;
-	}
-
-	public void setPersonalEmail(String personalEmail) {
-		this.personalEmail = personalEmail;
-	}
-
-	public String getGender() {
-		return gender;
-	}
-
-	public void setGender(String gender) {
-		this.gender = gender;
-	}
-
-	public OffsetDateTime getCreatedDate() {
-		return createdDate;
-	}
-
-	public void setCreatedDate(OffsetDateTime createdDate) {
-		this.createdDate = createdDate;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public OffsetDateTime getUpdatedDate() {
-		return updatedDate;
-	}
-
-	public void setUpdatedDate(OffsetDateTime updatedDate) {
-		this.updatedDate = updatedDate;
-	}
-
-	public Boolean getIsDeleted() {
-		return isDeleted;
-	}
-
-	public void setIsDeleted(Boolean isDeleted) {
-		this.isDeleted = isDeleted;
-	}
 
 }

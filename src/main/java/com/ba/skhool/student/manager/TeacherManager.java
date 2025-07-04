@@ -6,10 +6,12 @@ import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -30,12 +32,14 @@ import com.ba.skhool.constants.AttendanceStatus;
 import com.ba.skhool.iam.context.UserSessionContextHolder;
 import com.ba.skhool.iam.dto.UserDto;
 import com.ba.skhool.student.dto.AttendanceStatDto;
+import com.ba.skhool.student.dto.AttendanceStatusDto;
 import com.ba.skhool.student.dto.AttendanceUpdateDto;
 import com.ba.skhool.student.dto.DailyAttendanceDto;
 import com.ba.skhool.student.dto.ScheduleDto;
 import com.ba.skhool.student.dto.SearchDTO;
 import com.ba.skhool.student.dto.TeacherDto;
 import com.ba.skhool.student.dto.TeacherYearlyPerformanceDto;
+import com.ba.skhool.student.entity.Student;
 import com.ba.skhool.student.entity.StudentAttendanceBitmap;
 import com.ba.skhool.student.entity.Teacher;
 import com.ba.skhool.student.entity.TeacherPerformance;
@@ -181,6 +185,13 @@ public class TeacherManager {
 			trend.add(new DailyAttendanceDto(current, status));
 		}
 
+		LocalDate lastMarked = trend.get(trend.size() - 1).getDate();
+		int remainingDays = (int) ChronoUnit.DAYS.between(lastMarked, end);
+		for (int i = 0; i < remainingDays; i++) {
+			LocalDate current = lastMarked.plusDays(i + 1);
+			trend.add(new DailyAttendanceDto(current, AttendanceStatus.NOT_MARKED));
+		}
+
 		double overallPercentage = countableDays == 0 ? 0.0 : (presentCount * 100.0 / countableDays);
 
 		Map<YearMonth, Double> monthlyPercentage = new HashMap<>();
@@ -263,6 +274,67 @@ public class TeacherManager {
 		SpecificationBuilder<Teacher> specBuilder = new SpecificationBuilder<>();
 		Specification<Teacher> spec = specBuilder.build(searchDTO.getFilters());
 		return teacherRepo.findAll(spec, pageable);
+	}
+
+	@Transactional
+	public List<Map<String, Object>> getAssignedClasses(Long teacherId) {
+		List<Map<String, Object>> teacher = teacherRepo.findByIdWithClasses(teacherId);
+		return teacher;
+	}
+
+	@Transactional
+	public Map<String, Object> getAttendanceSummaryForToday(Long teacherId) {
+		List<Map<String, Object>> assignedClasses = teacherRepo.findByIdWithClasses(teacherId);
+		LocalDate today = LocalDate.now();
+		List<AttendanceStatusDto> result = new ArrayList<>();
+		Map<String, String> classesVsSections = assignedClasses.stream()
+				.collect(Collectors.toMap(ac -> ac.get("name").toString(), ac -> ac.get("section").toString()));
+
+		Map<String, List<Student>> clVsstudents = studentManager.getByClassNameAndSection(
+				classesVsSections.keySet().stream().toList(), classesVsSections.values().stream().toList());
+		Long totalStudents = 0l, totalPresent = 0l, totalAbsent = 0l, totalLate = 0l;
+		for (Map<String, Object> classroom : assignedClasses) {
+			int present = 0, absent = 0, unmarked = 0;
+			String key = classroom.get("name").toString().concat("-").concat(classroom.get("section").toString());
+			List<Student> students = clVsstudents.get(key);
+			for (Student student : students) {
+				if (student.getAttendance() != null) {
+					StudentAttendanceBitmap attendance = student.getAttendance();
+					Byte attendanceCode = AttendanceUtils.get3BitCode(attendance.getAttendanceBitmap(),
+							LocalDate.ofInstant(attendance.getStartDate().toInstant(), ZoneId.of("Asia/Kolkata")),
+							today);
+					if (attendanceCode == null || attendanceCode == 0b000) {
+						unmarked++;
+					} else if (attendanceCode == 0b001) {
+						present++;
+					} else {
+						absent++;
+					}
+				} else {
+					unmarked++;
+				}
+			}
+
+			AttendanceStatusDto dto = new AttendanceStatusDto();
+			dto.setClassName(classroom.get("name").toString());
+			dto.setSection(classroom.get("section").toString());
+			dto.setTotalStudents(students.size());
+			dto.setPresent(present);
+			dto.setAbsent(absent);
+			dto.setUnmarked(unmarked);
+			totalStudents += students.size();
+			totalAbsent += absent;
+			totalPresent += present;
+			result.add(dto);
+		}
+		double overallPercentage = (totalPresent / totalStudents) * 100;
+		Map<String, Object> map = new HashMap<>();
+		map.put("overallPercentage", overallPercentage);
+		map.put("totalStudents", totalStudents);
+		map.put("totalPresent", totalPresent);
+		map.put("totalAbsent", totalAbsent);
+		map.put("totalLate", totalLate);
+		return map;
 	}
 
 }

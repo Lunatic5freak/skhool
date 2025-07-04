@@ -21,6 +21,8 @@ public class SchoolClass {
 	private Long id;
 
 	private Long organization;
+
+	@Column(name = "classname")
 	private String className;
 	private Integer sections;
 

@@ -137,4 +137,16 @@ public class TeacherController {
 		return ResponseEntity.ok(Map.of("status", "Success"));
 	}
 
+	@GetMapping("/{id}/classes")
+	public ResponseEntity<List<Map<String, Object>>> getAssignedClasses(@PathVariable Long id) {
+		List<Map<String, Object>> classes = teacherManager.getAssignedClasses(id);
+		return ResponseEntity.ok(classes);
+	}
+
+	@GetMapping("/{teacherId}/attendance-summary")
+	public ResponseEntity<Map<String, Object>> getAttendanceSummary(@PathVariable Long teacherId) {
+		Map<String, Object> summary = teacherManager.getAttendanceSummaryForToday(teacherId);
+		return ResponseEntity.ok(summary);
+	}
+
 }

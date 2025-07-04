@@ -32,9 +32,17 @@ public class StudentSubjectPerformance {
 	private Subject subject;
 
 	private String term;
+
+	@Column(name = "marks_obtained")
 	private Float marksObtained;
+
+	@Column(name = "max_marks")
 	private Float maxMarks;
+
+	@Column(name = "performance_remark")
 	private String performanceRemark;
+
+	@Column(name = "exam_date")
 	private Date examDate;
 
 	@Column(name = "created_date", nullable = false)
