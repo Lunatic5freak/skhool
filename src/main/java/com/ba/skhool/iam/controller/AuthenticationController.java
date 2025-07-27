@@ -37,7 +37,7 @@ public class AuthenticationController {
 		HttpSession session = request.getSession(true);
 		session.setAttribute("REDIRECT_URI", redirect);
 
-		response.sendRedirect("/api/oauth2/authorization/keycloak");
+		response.sendRedirect("/oauth2/authorization/keycloak");
 	}
 
 	@GetMapping("/logout")
