@@ -18,10 +18,10 @@ public class User {
 	private Long id;
 
 	@Column(name = "first_name")
-	private String firstName;
+	private String firstname;
 
 	@Column(name = "last_name")
-	private String lastName;
+	private String lastname;
 
 	@Column(name = "username", length = 255)
 	private String username;
@@ -109,20 +109,20 @@ public class User {
 		this.isDeleted = isDeleted;
 	}
 
-	public String getFirstName() {
-		return firstName;
+	public String getFirstname() {
+		return firstname;
 	}
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
+	public void setFirstname(String firstname) {
+		this.firstname = firstname;
 	}
 
-	public String getLastName() {
-		return lastName;
+	public String getLastname() {
+		return lastname;
 	}
 
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
 	}
 
 }

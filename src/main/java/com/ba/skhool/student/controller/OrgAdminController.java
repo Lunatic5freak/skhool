@@ -1,11 +1,14 @@
 package com.ba.skhool.student.controller;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +22,7 @@ import com.ba.skhool.iam.context.UserSessionContextHolder;
 import com.ba.skhool.iam.dto.UserDto;
 import com.ba.skhool.iam.entity.User;
 import com.ba.skhool.iam.manager.UserManager;
+import com.ba.skhool.student.dto.SearchDTO;
 import com.ba.skhool.student.dto.TeacherDto;
 import com.ba.skhool.student.dto.UpdateTeacherPerformanceDto;
 import com.ba.skhool.student.entity.Teacher;
@@ -68,7 +72,7 @@ public class OrgAdminController {
 		return ResponseEntity.accepted().body("Upload started. Job ID: " + jobId);
 	}
 
-	@PostMapping("/teachers")
+	@PostMapping("/teachers/import")
 	public ResponseEntity<String> importTeachers(@RequestParam("file") MultipartFile file) {
 		String jobId = UUID.randomUUID().toString();
 		try {
@@ -93,6 +97,18 @@ public class OrgAdminController {
 
 		teacherManager.updateTeacherPerformance(performance);
 		return ResponseEntity.ok("Teacher performance updated");
+	}
+
+	@PostMapping("/teachers/")
+	public ResponseEntity<?> getAllTeachers(@RequestBody SearchDTO searchDto) {
+		Page<Teacher> teachers = teacherManager.getAllTeachers(searchDto);
+		List<TeacherDto> teacherDtos = teachers.getContent().stream().map(t -> {
+			TeacherDto teacher = new TeacherDto();
+			BeanUtils.copyProperties(t, teacher);
+			return teacher;
+		}).toList();
+		return ResponseEntity.ok(Map.of("teachers", teacherDtos, "totalPage", teachers.getTotalElements(),
+				"totalElements", teachers.getTotalElements()));
 	}
 
 }

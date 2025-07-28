@@ -1,5 +1,7 @@
 package com.ba.skhool.student.dto;
 
+import java.util.Date;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -33,4 +35,6 @@ public class StudentDTO {
 	private String address;
 
 	private String rollNo;
+	private Date dateOfBirth;
+	private Date admissiondate;
 }

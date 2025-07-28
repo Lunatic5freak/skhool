@@ -1,5 +1,7 @@
 package com.ba.skhool.student.dto;
 
+import java.util.Date;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -24,5 +26,8 @@ public class TeacherDto {
 	private String personalEmail;
 	private String gender;
 	private String role;
+	private String idProof;
+	private Date dateOfJoining;
+	private Date dateOfBirth;
 
 }

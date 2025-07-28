@@ -1,7 +1,6 @@
 package com.ba.skhool.student.manager;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -29,6 +28,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -91,10 +91,10 @@ public class StudentManager {
 		student.setOrganization(UserSessionContextHolder.getTenantId());
 		student.setCreatedBy(UserSessionContextHolder.getUsername());
 		UserDto userDto = new UserDto();
-		userDto.setFirstName(studentDto.getFirstname());
-		userDto.setLastName(studentDto.getLastname());
+		userDto.setFirstname(studentDto.getFirstname());
+		userDto.setLastname(studentDto.getLastname());
 		userDto.setRoles("student");
-		userDto.setUserName(studentDto.getUsername());
+		userDto.setUsername(studentDto.getUsername());
 		userDto.setTenantId(UserSessionContextHolder.getTenantId());
 		userDto.setId(student.getId());
 		boolean isCreated = keycloakUserManager.createUserInKeycloak(userDto);
@@ -109,6 +109,7 @@ public class StudentManager {
 	@Transactional
 	public void processStudentCsvAsync(MultipartFile file, String jobId, Long orgId, String userName) {
 		LOG.debug("Started process with jobId: {}", jobId);
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		taskExecutor.execute(() -> {
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
 				CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get()
@@ -131,11 +132,13 @@ public class StudentManager {
 					student.setSection(record.get("section"));
 					student.setRollNo(record.get("roll_no"));
 					student.setGuardianContact(record.get("guardian contact"));
+					student.setDateOfBirth(df.parse(record.get("Date of birth")));
+					student.setAdmissiondate(df.parse(record.get("Date of admission")));
 					UserDto userDto = new UserDto();
-					userDto.setFirstName(student.getFirstname());
-					userDto.setLastName(student.getLastname());
+					userDto.setFirstname(student.getFirstname());
+					userDto.setLastname(student.getLastname());
 					userDto.setRoles("student");
-					userDto.setUserName(student.getUsername());
+					userDto.setUsername(student.getUsername());
 					userDto.setTenantId(orgId);
 					userDto.setId(student.getId());
 					boolean isCreated = keycloakUserManager.createUserInKeycloak(userDto);
@@ -154,7 +157,7 @@ public class StudentManager {
 				}
 
 				LOG.debug("Job " + jobId + " finished.");
-			} catch (IOException e) {
+			} catch (Exception e) {
 				LOG.error("Failed job with jobId: {} and error: {}", jobId, e);
 			} finally {
 				TenantContext.clear();
@@ -180,7 +183,6 @@ public class StudentManager {
 		Map<Integer, List<AttendanceStatus>> yearMap = new HashMap<>();
 		List<DailyAttendanceDto> trend = new ArrayList<>();
 
-		int totalTrackedDays = (int) ChronoUnit.DAYS.between(startDate, startDate.plusDays(bitmap.length * 8 / 3));
 		int presentCount = 0;
 		int countableDays = 0;
 
@@ -282,7 +284,6 @@ public class StudentManager {
 			bitmapEntity = new StudentAttendanceBitmap();
 			bitmapEntity.setAttendanceBitmap(new byte[1]);
 			bitmapEntity.setCreatedBy(UserSessionContextHolder.getUsername());
-			DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 			bitmapEntity.setStartDate(new Date());
 			Student s = studentRepository.findById(studentId).get();
 			bitmapEntity.setStudentId(s);
@@ -356,6 +357,21 @@ public class StudentManager {
 	public Map<Long, Student> findByIds(List<Long> ids) {
 		return studentRepository.findAllById(ids).stream()
 				.collect(Collectors.toMap(Student::getId, Function.identity()));
+	}
+
+	public ResponseEntity<?> getAttendanceCount(LocalDate start) {
+		List<StudentAttendanceBitmap> bitmapEntity = studentAttendanceRepo.findAll();
+		Map<AttendanceStatus, Long> map = new HashMap<>();
+		bitmapEntity.forEach(b -> {
+			AttendanceStatus status = AttendanceUtils.readAttendance(b.getAttendanceBitmap(),
+					b.getStartDate().toInstant().atZone(ZoneId.of("Asia/Kolkata")).toLocalDate(), start);
+			map.put(status, map.getOrDefault(status, 0l) + 1);
+		});
+		return ResponseEntity.ok(map);
+	}
+
+	public Long getStudentCount() {
+		return studentRepository.count();
 	}
 
 }

@@ -43,10 +43,12 @@ import com.ba.skhool.student.entity.Student;
 import com.ba.skhool.student.entity.StudentAttendanceBitmap;
 import com.ba.skhool.student.entity.Teacher;
 import com.ba.skhool.student.entity.TeacherPerformance;
+import com.ba.skhool.student.entity.TeacherSubjectMap;
 import com.ba.skhool.student.entity.TeachersAttendanceBitMap;
 import com.ba.skhool.student.repository.TeacherAttendanceRepository;
 import com.ba.skhool.student.repository.TeacherPerformanceRepository;
 import com.ba.skhool.student.repository.TeacherRepository;
+import com.ba.skhool.student.repository.TeacherSubjectMapRepository;
 import com.ba.skhool.student.utils.SortBuilder;
 import com.ba.skhool.student.utils.SpecificationBuilder;
 import com.ba.skhool.utils.AttendanceUtils;
@@ -74,16 +76,19 @@ public class TeacherManager {
 	@Autowired
 	private KeycloakUserManager keycloakUserManager;
 
+	@Autowired
+	private TeacherSubjectMapRepository teacherSubjectRepo;
+
 	@Transactional
 	public Teacher save(TeacherDto teacherDto) {
 		Teacher teacher = new Teacher();
 		BeanUtils.copyProperties(teacherDto, teacher);
 		teacher.setCreatedBy(UserSessionContextHolder.getUsername());
 		UserDto userDto = new UserDto();
-		userDto.setFirstName(teacherDto.getFirstname());
-		userDto.setLastName(teacherDto.getLastname());
+		userDto.setFirstname(teacherDto.getFirstname());
+		userDto.setLastname(teacherDto.getLastname());
 		userDto.setRoles("teacher");
-		userDto.setUserName(teacherDto.getUsername());
+		userDto.setUsername(teacherDto.getUsername());
 		userDto.setTenantId(UserSessionContextHolder.getTenantId());
 		boolean isCreated = keycloakUserManager.createUserInKeycloak(userDto);
 		if (isCreated) {
@@ -227,14 +232,6 @@ public class TeacherManager {
 				new ScheduleDto(teacherId, "Science", "11:00 AM", "Tuesday", null, null));
 	}
 
-	private int parseAttendanceBitmap(byte[] bitmap) {
-		int count = 0;
-		for (byte b : bitmap) {
-			count += Integer.bitCount(b & 0xFF);
-		}
-		return count; // For example, number of present days
-	}
-
 	public List<TeacherYearlyPerformanceDto> getYearlyPerformance(Long teacherId) {
 		return teacherPerformanceRepository.findAllByTeacherId(teacherId).stream()
 				.map(p -> new TeacherYearlyPerformanceDto(p.getAcademicYear(), p.getAverageResultScore(),
@@ -335,6 +332,18 @@ public class TeacherManager {
 		map.put("totalAbsent", totalAbsent);
 		map.put("totalLate", totalLate);
 		return map;
+	}
+
+	public List<TeacherSubjectMap> findByTeacherId(Long id) {
+		return teacherSubjectRepo.findByTeacher_IdAndIsDeletedFalse(id);
+	}
+
+	public List<Teacher> findAllById(List<Long> teacherIds) {
+		return teacherRepo.findAllById(teacherIds);
+	}
+
+	public Long getTeacherCount() {
+		return teacherRepo.count();
 	}
 
 }

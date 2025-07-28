@@ -10,34 +10,35 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "classroom")
+@Table(name = "class_subject", uniqueConstraints = { @UniqueConstraint(columnNames = { "class_id", "subject_id" }),
+		@UniqueConstraint(columnNames = { "subject_id", "class_id" }) })
 @Data
 @NoArgsConstructor
-public class ClassRoom {
+public class ClassSubjectMap {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Integer id;
 
-	private String name;
-	private String section;
+//    @Column(name = "class_id", nullable = false)
+//    private Integer classId;
+//
+//    @Column(name = "subject_id", nullable = false)
+//    private Integer subjectId;
 
-	@Column(name = "start_time")
-	private OffsetDateTime startTime;
-
-	@Column(name = "end_time")
-	private OffsetDateTime endTime;
+	// Foreign key relations (optional to map)
+	@ManyToOne
+	@JoinColumn(name = "class_id", insertable = false, updatable = false)
+	private SchoolClass classId;
 
 	@ManyToOne
-	@JoinColumn(name = "subject_id")
+	@JoinColumn(name = "subject_id", insertable = false, updatable = false)
 	private Subject subject;
-
-	@Column(name = "week_day")
-	private String weekDay;
 
 	@Column(name = "created_date", nullable = false)
 	private OffsetDateTime createdDate = OffsetDateTime.now();

@@ -14,30 +14,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "classroom")
+@Table(name = "teacher_subject_map")
 @Data
 @NoArgsConstructor
-public class ClassRoom {
+public class TeacherSubjectMap {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private String name;
-	private String section;
-
-	@Column(name = "start_time")
-	private OffsetDateTime startTime;
-
-	@Column(name = "end_time")
-	private OffsetDateTime endTime;
+	@ManyToOne
+	@JoinColumn(name = "teacher_id", nullable = false)
+	private Teacher teacher;
 
 	@ManyToOne
-	@JoinColumn(name = "subject_id")
+	@JoinColumn(name = "subject_id", nullable = false)
 	private Subject subject;
-
-	@Column(name = "week_day")
-	private String weekDay;
 
 	@Column(name = "created_date", nullable = false)
 	private OffsetDateTime createdDate = OffsetDateTime.now();
@@ -50,5 +42,4 @@ public class ClassRoom {
 
 	@Column(name = "is_deleted")
 	private Boolean isDeleted = false;
-
 }

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +24,8 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/auth")
 public class AuthenticationController {
 
+	Logger LOG = LoggerFactory.getLogger(AuthenticationController.class);
+
 	@Value("${keycloak.baseUrl}")
 	private String keyclockUrl;
 
@@ -34,6 +38,7 @@ public class AuthenticationController {
 	@GetMapping("/login")
 	public void initLogin(@RequestParam(defaultValue = "/") String redirect, HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
+		LOG.debug("started login processfor redirection_uri: {}", redirect);
 		HttpSession session = request.getSession(true);
 		session.setAttribute("REDIRECT_URI", redirect);
 
@@ -42,9 +47,14 @@ public class AuthenticationController {
 
 	@GetMapping("/logout")
 	public void logout(@AuthenticationPrincipal OidcUser oidcUser, HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
+			HttpServletResponse response, @RequestParam(name = "redirect", required = false) String redirect)
+			throws IOException {
 
 		try {
+			LOG.info("Started logout process for redirection_uri: {}", redirect);
+			if (redirect != null) {
+				redirectUri = redirect;
+			}
 			String idToken = oidcUser.getIdToken().getTokenValue();
 			String logoutUrl = keyclockUrl + "/realms/" + relam + "/protocol/openid-connect/logout" + "?id_token_hint="
 					+ idToken + "&post_logout_redirect_uri=" + redirectUri;

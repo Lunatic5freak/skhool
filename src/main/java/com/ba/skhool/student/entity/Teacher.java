@@ -1,6 +1,7 @@
 package com.ba.skhool.student.entity;
 
 import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.Set;
 
 import jakarta.persistence.Column;
@@ -50,9 +51,17 @@ public class Teacher {
 	@OneToOne(fetch = FetchType.LAZY)
 	private TeachersAttendanceBitMap attendance;
 
+	@Column(name = "date_of_joining")
+	private Date dateOfJoining;
+
+	@Column(name = "date_of_birth")
+	private Date dateOfBirth;
+
 	@Column(name = "personal_email")
 	private String personalEmail;
 	private String gender;
+	@Column(name = "id_proof")
+	private String idProof;
 
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "teacher_classroom", joinColumns = @JoinColumn(name = "teacher_id"), inverseJoinColumns = @JoinColumn(name = "classroom_id"))

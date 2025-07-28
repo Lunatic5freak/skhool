@@ -38,12 +38,12 @@ public class KeycloakUserManager {
 		try {
 			LOG.info("Inside createUserInKeycloak");
 			UserRepresentation user = new UserRepresentation();
-			user.setUsername(userDto.getUserName());
+			user.setUsername(userDto.getUsername());
 			user.setEnabled(true);
-			user.setEmail(userDto.getUserName());
+			user.setEmail(userDto.getUsername());
 			user.setEmailVerified(false);
-			user.setFirstName(userDto.getFirstName());
-			user.setLastName(userDto.getLastName());
+			user.setFirstName(userDto.getFirstname());
+			user.setLastName(userDto.getLastname());
 			user.setClientRoles(Map.of(clientId, List.of(userDto.getRoles())));
 			user.setAttributes(Map.of("tenantId", List.of(String.valueOf(userDto.getTenantId())), "role",
 					List.of(userDto.getRoles())));

@@ -2,6 +2,7 @@ package com.ba.skhool.iam.config;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,10 +12,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,7 +26,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -54,8 +56,8 @@ public class SecurityConfig {
 	@Autowired
 	SecurityProperties restSecProps;
 
-	@Autowired
-	private ClientRegistrationRepository clientRegistrationRepo;
+	@Value("${allowed.origins}")
+	private String allowedOrigins;
 
 	@Bean
 	public AuthenticationEntryPoint restAuthenticationEntryPoint() {
@@ -72,9 +74,10 @@ public class SecurityConfig {
 		};
 	}
 
+	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of("*"));
+		configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
 		configuration.setAllowedMethods(List.of("*"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
@@ -85,8 +88,8 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(c -> c.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-				.cors().configurationSource(corsConfigurationSource()).and()
+		http.cors(Customizer.withDefaults()).csrf(c -> c.disable())
+				.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/actuator/**", "/public/**", "/auth/login", "/teacher/**", "/swagger-ui/**",
 								"/v3/**")
@@ -139,6 +142,9 @@ public class SecurityConfig {
 
 			Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
 			List<String> roles = (List<String>) oidcUser.getClaims().get("roles");
+			if (roles == null) {
+				roles = List.of("ROLE_student");
+			}
 			for (String role : roles) {
 				mappedAuthorities.add(new SimpleGrantedAuthority(role));
 			}
@@ -152,8 +158,8 @@ public class SecurityConfig {
 		return new WebMvcConfigurer() {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("/**").allowedOrigins("http://localhost") // or http://localhost:3000 for local
-						.allowedMethods("*").allowCredentials(true); // <== Important
+				registry.addMapping("/**").allowedOrigins(allowedOrigins.split(",")).allowedMethods("*")
+						.allowCredentials(true); // <== Important
 			}
 		};
 	}

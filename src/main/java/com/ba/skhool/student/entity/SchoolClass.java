@@ -22,7 +22,7 @@ public class SchoolClass {
 
 	private Long organization;
 
-	@Column(name = "classname")
+	@Column(name = "class_name")
 	private String className;
 	private Integer sections;
 

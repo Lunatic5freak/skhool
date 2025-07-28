@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,18 +20,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.ba.skhool.iam.context.UserSessionContextHolder;
 import com.ba.skhool.student.dto.AttendanceDayDto;
 import com.ba.skhool.student.dto.AttendanceStatDto;
 import com.ba.skhool.student.dto.AttendanceUpdateDto;
 import com.ba.skhool.student.dto.ScheduleDto;
 import com.ba.skhool.student.dto.SearchDTO;
-import com.ba.skhool.student.dto.StudentDTO;
 import com.ba.skhool.student.dto.TeacherDto;
 import com.ba.skhool.student.dto.TeacherYearlyPerformanceDto;
-import com.ba.skhool.student.entity.Student;
 import com.ba.skhool.student.entity.Teacher;
 import com.ba.skhool.student.manager.StudentManager;
 import com.ba.skhool.student.manager.TeacherManager;
@@ -46,20 +41,6 @@ public class TeacherController {
 
 	@Autowired
 	private TeacherManager teacherManager;
-
-	@PostMapping("/create_student")
-	public ResponseEntity<?> createStudent(@RequestBody StudentDTO studentDto) {
-		Student s = studentManager.save(studentDto);
-		return ResponseEntity.ok(s);
-	}
-
-	@PostMapping("/create_student/bulk")
-	public ResponseEntity<String> importStudents(@RequestParam("file") MultipartFile file) {
-		String jobId = UUID.randomUUID().toString();
-		studentManager.processStudentCsvAsync(file, jobId, UserSessionContextHolder.getTenantId(),
-				UserSessionContextHolder.getUsername());
-		return ResponseEntity.accepted().body("Upload started. Job ID: " + jobId);
-	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<TeacherDto> getTeacherById(@PathVariable Long id) {
@@ -149,4 +130,9 @@ public class TeacherController {
 		return ResponseEntity.ok(summary);
 	}
 
+	@GetMapping("/count")
+	public ResponseEntity<?> getTeacherCount() {
+		Long totalTeachers = teacherManager.getTeacherCount();
+		return ResponseEntity.ok(Map.of("count", totalTeachers));
+	}
 }

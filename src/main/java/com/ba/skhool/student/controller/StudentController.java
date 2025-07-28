@@ -1,17 +1,22 @@
 package com.ba.skhool.student.controller;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,8 +24,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ba.skhool.constants.AttendanceStatus;
+import com.ba.skhool.iam.context.UserSessionContextHolder;
 import com.ba.skhool.student.dto.AttendanceDayDto;
 import com.ba.skhool.student.dto.AttendanceStatDto;
 import com.ba.skhool.student.dto.SearchDTO;
@@ -29,7 +36,6 @@ import com.ba.skhool.student.dto.SubjectTermScoreDto;
 import com.ba.skhool.student.entity.Student;
 import com.ba.skhool.student.entity.StudentAttendanceBitmap;
 import com.ba.skhool.student.manager.StudentManager;
-import com.ba.skhool.student.manager.TeacherManager;
 
 @RestController
 @RequestMapping("/student")
@@ -38,10 +44,23 @@ public class StudentController {
 	@Autowired
 	private StudentManager studentManager;
 
-	@Autowired
-	private TeacherManager teacherManager;
+	@PreAuthorize("hasAnyRole('teacher','admin')")
+	@PostMapping("/")
+	public ResponseEntity<?> createStudent(@RequestBody StudentDTO studentDto) {
+		Student s = studentManager.save(studentDto);
+		return ResponseEntity.ok(s);
+	}
 
-	@GetMapping("/student/{id}/attendance")
+	@PreAuthorize("hasAnyRole('teacher','admin')")
+	@PostMapping("/bulk")
+	public ResponseEntity<?> importStudents(@RequestParam("file") MultipartFile file) {
+		String jobId = UUID.randomUUID().toString();
+		studentManager.processStudentCsvAsync(file, jobId, UserSessionContextHolder.getTenantId(),
+				UserSessionContextHolder.getUsername());
+		return ResponseEntity.accepted().body("Upload started. Job ID: " + jobId);
+	}
+
+	@GetMapping("/{id}/attendance")
 	public ResponseEntity<AttendanceStatDto> getStudentAttendanceGraph(@PathVariable Long id,
 			@RequestParam(name = "start", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
 			@RequestParam(name = "end", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
@@ -53,12 +72,12 @@ public class StudentController {
 		return studentManager.getSubjectWiseMarks(studentId);
 	}
 
-	@GetMapping("/students/{studentId}/performance/overall-distribution")
+	@GetMapping("/{studentId}/performance/overall-distribution")
 	public Map<String, Float> getScoreDistribution(@PathVariable Long studentId) {
 		return studentManager.getScoreDistribution(studentId);
 	}
 
-	@GetMapping("/students/{studentId}/performance/attendance")
+	@GetMapping("/{studentId}/performance/attendance")
 	public List<AttendanceDayDto> getAttendanceTrend(@PathVariable Long studentId) {
 		StudentAttendanceBitmap bitmapEntity = studentManager.getStudentAttendance(studentId);
 
@@ -102,6 +121,7 @@ public class StudentController {
 		return ResponseEntity.ok(studentDto);
 	}
 
+	@PreAuthorize("hasAnyRole('teacher','admin')")
 	@PostMapping("/get_students")
 	public ResponseEntity<?> getAllStudents(@RequestBody SearchDTO searchDto) {
 		Page<Student> students = studentManager.getAllStudents(searchDto);
@@ -114,6 +134,39 @@ public class StudentController {
 		});
 		return ResponseEntity.ok(Map.of("students", studentsDtos, "totalPage", students.getTotalElements(),
 				"totalElements", students.getTotalElements()));
+	}
+
+	@PreAuthorize("hasAnyRole('teacher','admin')")
+	@GetMapping("/bulk/sample-template")
+	public ResponseEntity<ByteArrayResource> downloadCsvTemplate() {
+		String csvContent = generateSampleTemplate();
+		ByteArrayResource resource = new ByteArrayResource(csvContent.getBytes(StandardCharsets.UTF_8));
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attendance_template.csv");
+		headers.add(HttpHeaders.CONTENT_TYPE, "text/csv");
+		return ResponseEntity.ok().headers(headers).contentLength(resource.contentLength()).body(resource);
+	}
+
+	private String generateSampleTemplate() {
+		return """
+				classname,firstname,lastname,"organization email",guardian,gender,stream,username,contact,section,roll_no,"Date of birth","Date of admission","guardian contact"
+				10,Kayla,Clark,lori13@nelson-barrera.com,Edward Rodriguez,Female,Science,larryhobbs,2370622007,B,1,2025-12-30,2025-11-12,1234567890
+				2,Taylor,Pena,dgutierrez@johnson-evans.org,Miranda Copeland,Male,Arts,matthew99,+15945577869,A,2,2025-12-30,2025-11-12,12345789087
+				  """;
+	}
+
+	@PreAuthorize("hasAnyRole('teacher','admin')")
+	@GetMapping("/attendance-count")
+	public ResponseEntity<?> getAttendanceCount(
+			@RequestParam(name = "start", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start) {
+		return studentManager.getAttendanceCount(start);
+	}
+
+	@GetMapping("/count")
+	@PreAuthorize("hasAnyRole('teacher','admin')")
+	public ResponseEntity<?> getTeacherCount() {
+		Long totalTeachers = studentManager.getStudentCount();
+		return ResponseEntity.ok(Map.of("count", totalTeachers));
 	}
 
 }

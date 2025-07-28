@@ -28,7 +28,7 @@ public class UserManager {
 	public User saveUser(UserDto userDto) {
 		User dbUser = new User();
 		BeanUtils.copyProperties(userDto, dbUser);
-		dbUser.setUsername(userDto.getUserName());
+		dbUser.setUsername(userDto.getUsername());
 		dbUser.setOrganizationId(
 				userDto.getTenantId() != null ? userDto.getTenantId() : UserSessionContextHolder.getTenantId());
 		dbUser.setCreatedBy(UserSessionContextHolder.getUsername());

@@ -12,9 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.ba.skhool.iam.context.UserSessionContextHolder;
-import com.ba.skhool.iam.repository.SubjectRepository;
 import com.ba.skhool.student.dto.SubjectRequest;
 import com.ba.skhool.student.entity.Subject;
+import com.ba.skhool.student.repository.SubjectRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -50,6 +50,10 @@ public class SubjectManager {
 
 	public Map<Long, Subject> findByIds(List<Long> ids) {
 		return subjectRepo.findAllById(ids).stream().collect(Collectors.toMap(Subject::getId, Function.identity()));
+	}
+
+	public List<Subject> findAllById(List<Long> subjectIds) {
+		return subjectRepo.findAllById(subjectIds);
 	}
 
 }

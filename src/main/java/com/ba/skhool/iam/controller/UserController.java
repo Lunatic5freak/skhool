@@ -42,7 +42,7 @@ public class UserController {
 		}
 		UserDto userDto = new UserDto();
 		BeanUtils.copyProperties(user, userDto);
-		userDto.setUserName(user.getUsername());
+		userDto.setUsername(user.getUsername());
 		userDto.setRoles(user.getRole());
 		userDto.setTenantId(UserSessionContextHolder.getTenantId());
 		return ResponseEntity.ok(userDto);
@@ -51,7 +51,12 @@ public class UserController {
 	@GetMapping("/me")
 	public ResponseEntity<?> getUserDetails() {
 		String userName = UserSessionContextHolder.getUsername();
-		String role = UserSessionContextHolder.getRole().stream().toList().get(0).getAuthority();
+		String role = null;
+		try {
+			role = UserSessionContextHolder.getRole().stream().toList().get(0).getAuthority();
+		} catch (Exception e) {
+			role = String.valueOf(UserSessionContextHolder.getRole().stream().toList().get(0));
+		}
 		if (role.contains("teacher")) {
 			Teacher teacher = teacherManager.findByUsername(userName);
 			TeacherDto teacherDto = new TeacherDto();
@@ -73,7 +78,7 @@ public class UserController {
 		}
 		UserDto userDto = new UserDto();
 		BeanUtils.copyProperties(user, userDto);
-		userDto.setUserName(user.getUsername());
+		userDto.setUsername(user.getUsername());
 		userDto.setRoles(user.getRole());
 		userDto.setTenantId(UserSessionContextHolder.getTenantId());
 		return ResponseEntity.ok(userDto);
